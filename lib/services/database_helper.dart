@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:local_database/models/note_model.dart';
+import 'package:local_database/models/user.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
@@ -23,6 +24,20 @@ class DatabaseHelper {
   static const _categoryColumnId = 'categoryId';
   static const _categoryColumnTitle = 'categoryTitle';
 
+  static const String _userDbName = "User.db";
+
+  static const _userTableName = 'User';
+  static const _userColumnId = 'userId';
+  static const _userColumnName = 'userName';
+  static const _userIsLogged = 'isLogged';
+
+  static Future<Database> _getUserDB() async {
+    return openDatabase(join(await getDatabasesPath(), _userDbName),
+        onCreate: (db, version) async => await db.execute(
+            "CREATE TABLE IF NOT EXISTS $_userTableName($_userColumnId INTEGER PRIMARY KEY,"
+                " $_userColumnName TEXT NOT NULL, $_userIsLogged INTEGER NOT NULL);"),
+        version: _version);
+  }
 
   static Future<Database> _getDB() async {
     return openDatabase(join(await getDatabasesPath(), _dbName),
@@ -63,6 +78,12 @@ class DatabaseHelper {
         conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
+  static Future<int> addUser(User user) async {
+    final db = await _getUserDB();
+    return await db.insert(_userTableName, user.toJson(),
+        conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
   static Future<int> updateNote(Item note) async {
     final db = await _getDB();
     return await db.update(_tableName, note.toJson(),
@@ -78,6 +99,28 @@ class DatabaseHelper {
       where: '$_itemColumnId = ?',
       whereArgs: [note.id],
     );
+  }
+
+  static deleteUser() async {
+    final db = await _getUserDB();
+
+    if(db.database.isOpen){
+      print("db is open");
+      await db.delete(_userTableName);
+    }
+
+  }
+
+  static Future<List<User>?> getUserData() async {
+    final db = await _getUserDB();
+
+    final List<Map<String, dynamic>> maps = await db.query(_userTableName);
+    if (maps.isEmpty) {
+      return null;
+    }else{
+      debugPrint(maps.map((e) => e.values).toString());
+    }
+    return List.generate(maps.length, (index) => User.fromJson(maps[index]));
   }
 
   static Future<List<Item>?> getAllNotes() async {

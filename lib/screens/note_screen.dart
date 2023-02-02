@@ -52,7 +52,7 @@ class _NoteScreenState extends State<NoteScreen> {
       print(category["categoryTitle"]);
     }
 
-    if(widget.note!=null){
+    if (widget.note != null) {
       _selectedId = widget.note!.categoryId;
       dropDownValue = widget.note!.categoryName;
 
